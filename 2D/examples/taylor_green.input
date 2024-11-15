@@ -1,0 +1,14 @@
+&case
+    icase = 0
+/
+
+
+&gridsize
+    nx = 2048
+    ny = 2048
+/
+
+&geometry
+    Lx = 1.0
+    Ly = 1.0
+/

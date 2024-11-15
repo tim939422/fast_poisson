@@ -1,0 +1,12 @@
+
+&case
+    icase = 3
+/
+&gridsize
+    nx = 4096
+    ny = 4096
+/
+&geometry
+    Lx = 1.0
+    Ly = 1.0
+/

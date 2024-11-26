@@ -1,8 +1,5 @@
-# Specify the executable name
-set(EXECUTABLE_NAME test_1d.exe)
-
 # Add the executable target
-add_executable(${EXECUTABLE_NAME}
+add_executable(test_1d.exe
     m_grid.f90
     m_laplacian.f90
     m_numerics.f90
@@ -10,7 +7,13 @@ add_executable(${EXECUTABLE_NAME}
     test_1d.f90
 )
 
+add_executable(test_2d.exe
+    m_numerics.f90
+    test_2d.f90
+)
+
+set(EXECUTABLES test_1d.exe test_2d.exe)
 # Specify the install destination relative to the root
-install(TARGETS ${EXECUTABLE_NAME}
+install(TARGETS ${EXECUTABLES}
     RUNTIME DESTINATION bin
 )

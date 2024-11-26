@@ -16,7 +16,7 @@ program test_1d
     character(len=20) :: fmt  ! Format string for printing
     real(rp) :: error
 
-    Nx = 32
+    Nx = 4096
     beta = 1.2_rp
     ! allocate memory
     allocate(xf(0:Nx+1), xc(0:Nx+1), dxf(0:Nx+1), dxc(0:Nx+1))
@@ -70,7 +70,7 @@ program test_1d
     end do
 
     error = norm2(dphidx(0:Nx) - dphidx_a(0:Nx))/norm2(dphidx_a(0:Nx))
-    print '(f20.15)', error
+    print *, error
 
     ! Deallocate all allocated arrays
     if (allocated(xf)) deallocate(xf)

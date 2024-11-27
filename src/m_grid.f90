@@ -23,6 +23,26 @@ contains
     end subroutine twoside_stretch_grid
 
     
+    !> Generate a uniform grid.
+    !>
+    !> @param[in] n     number of cells (n + 1 faces)
+    !> @param[in] L     domain length
+    !> @param[out] x    face coordinate 0:n
+    subroutine linspace(n, L, x)
+        integer, intent(in) :: n
+        real(rp), intent(in) :: L
+        real(rp), intent(out) :: x(0:)
+
+        integer  :: i
+        real(rp) :: dx
+
+        dx = L/real(n, rp)
+        do i = 0, n
+            x(i) = real(i, rp)*dx
+        end do
+        
+    end subroutine linspace
+    
     !> Evaluate grid metric for 1D non-uniform grid with 2nd order central difference
     !>
     !> @param[in] n     number of interior cells (n + 1 faces)

@@ -4,8 +4,8 @@
 
 
 &gridsize
-    nx = 2048
-    ny = 2048
+    nx = 4096
+    ny = 4096
 /
 
 &geometry

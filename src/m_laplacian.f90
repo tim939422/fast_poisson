@@ -2,7 +2,7 @@ module m_laplacian
     use m_numerics
     implicit none
     private
-    public :: laplacian_1d_tridiagonal
+    public :: laplacian_1d_tridiagonal, laplacian_dft
 contains
     subroutine laplacian_1d_tridiagonal(n, dxf, dxc, a, b, c)
         integer, intent(in) :: n
@@ -19,6 +19,26 @@ contains
 
         call tridiagonal_bc(n, a, b, c)
     end subroutine laplacian_1d_tridiagonal
+
+    subroutine laplacian_dft(n, dx, laplacian)
+        integer, intent(in)   :: n
+        real(rp), intent(in)  :: dx
+        real(rp), intent(out), dimension(:) :: laplacian
+
+        integer :: i
+        real(rp) :: invdx2
+        ! eigenvalues
+        ! P-P
+        do i = 1, n
+            laplacian(i) = two*(cos(two*PI*real(i - 1, rp)/real(n, rp)) - one)
+        end do
+
+        invdx2 = one/dx**2
+        do i = 1, n
+            laplacian(i) = laplacian(i)*invdx2
+        end do
+
+    end subroutine laplacian_dft
 
 
 

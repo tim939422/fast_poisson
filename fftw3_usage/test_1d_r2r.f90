@@ -28,7 +28,7 @@ program test_1d_r2r
     write(iunit, '(A)')  "# Output of FFT:"
     write(iunit, '(A)')  "#   k         out(i)"
     do i = 1, N
-        write(iunit, '(i5, E20.12)') i, out(i)
+        write(iunit, '(i5, es20.12)') i, out(i)
     end do
     close(iunit)
 

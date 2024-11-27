@@ -1,5 +1,5 @@
 import numpy as np
-from tools import *
+from helpers import *
 import sys
 
 if __name__ == '__main__':
@@ -8,17 +8,15 @@ if __name__ == '__main__':
     
     Lx = 4*np.pi
     Ly = 2
-
-    # grid and metric
-    xf = np.zeros(nx + 2); xc = np.zeros(nx + 2)
-    xf[:-1] = np.linspace(0, Lx, nx + 1)
-    xf[-1] = 2*xf[-2] - xf[-3]
-    xc[1:] = (xf[:-1] + xf[1:])*0.5
-    xc[0] = 2*xf[0] - xc[1]
-    dx = Lx/nx
-
     beta = 1.2
-    yf, yc, dyf, dyc = twoside_stretch_grid(ny, Ly, beta)
+
+    # grid
+    xf, xc = staggered_uniform_grid(nx, Lx)
+    yf, yc = staggered_twoside_stretched_grid(ny, Ly, beta)
+
+    # metric
+    dx = Lx/nx
+    dyf, dyc = staggered_metric(ny, yf, yc)
 
     # laplacian
     a, b, c = create_laplacian(ny, dyf, dyc)

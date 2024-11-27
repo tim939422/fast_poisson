@@ -22,6 +22,19 @@ def staggered_twoside_stretched_grid(N, H, beta):
 
     return zf, zc
 
+def staggered_uniform_grid(N, L):
+    xf = np.zeros(N + 2); xc = np.zeros(N + 2)
+
+    # face coordinate
+    xf[:-1] = np.linspace(0, L, N + 1)
+    xf[N + 1] = 2*xf[N] - xf[N - 1]
+
+    # cell coordinate
+    xc[1:] = (xf[:-1] + xf[1:])*0.5
+    xc[0] = 2*xf[0] - xc[1]
+
+    return xf, xc
+
 def staggered_metric(N, zf, zc):
     dzf = np.zeros(N + 2) # metric dz/dzeta at face coordinate
     dzc = np.zeros(N + 2) # metric dz/dzeta at cell coordinate

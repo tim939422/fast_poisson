@@ -233,7 +233,7 @@ contains
             allocate(self%zf(0:nz + 1), self%zc(0:nz + 1), self%dzf(0:nz + 1), self%dzc(0:nz + 1))
         end associate
 
-        print *, "t_rectilinear_2d resource allocated"
+        print *, "t_rectilinear_3d resource allocated"
     end subroutine allocate_rectilinear_3d
 
     subroutine finalize_rectilinear_3d(self)
@@ -255,7 +255,7 @@ contains
         if (allocated(self%dzf)) deallocate(self%dzf)
         if (allocated(self%dzc)) deallocate(self%dzc)
 
-        print *, "t_rectilinear_2d resource freed"
+        print *, "t_rectilinear_3d resource freed"
         
     end subroutine finalize_rectilinear_3d
 

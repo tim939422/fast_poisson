@@ -65,7 +65,7 @@ program demo_2d
             end do
         end do
     end associate
-    relative_error = norm2(ref(0:nx, 1:ny) - sol(0:nx, 1:ny))/norm2(ref(0:nx, 1:ny))
+    relative_error = norm2(ref(1:nx, 0:ny) - sol(1:nx, 0:ny))/norm2(ref(1:nx, 0:ny))
     write(*, '("Relative error in dphi/dy ", es23.15)') relative_error
 
     

@@ -6,7 +6,7 @@ module m_poisson
     !> author - D. Fan, 2024-11-28
 
     use m_kinds, only: rp
-    use m_rectilinear, only: t_rectilinear_2d
+    use m_rectilinear, only: t_rectilinear_2d, t_rectilinear_3d
     use m_laplacian, only: fft_laplacian, matrix_laplacian
     use m_fft, only: DFT, IDFT
     use m_fft, only: create_r2r_2d, execute_fft_2d
@@ -45,7 +45,35 @@ module m_poisson
         procedure, public :: finalize => finalize_poisson_2d
     end type t_poisson_2d
 
-    
+    type, public :: t_poisson_3d
+        private
+        !> dimension in x (# of cells)
+        integer, public :: nx
+        !> dimension in y
+        integer, public :: ny
+        !> dimension in y
+        integer, public :: nz
+        !> laplacian operator in x
+        real(rp), allocatable :: laplacian_x(:)
+        !> laplacian operator in y
+        real(rp), allocatable :: laplacian_y(:)
+        !> tridiagonal matrix in z (bb is the b + laplacian_x(i) + laplacian_x(j))
+        real(rp), allocatable :: a(:), b(:), c(:), bb(:)
+        !> work array for FFT
+        real(rp), allocatable :: work(:, :, :)
+        !> forward FFT plan x -> y
+        type(c_ptr) :: forward(2)
+        !> backward FFT plan y -> x
+        type(c_ptr) :: backward(2)
+        !> FFT normalization factor
+        real(rp) :: factor
+    contains
+        private
+        procedure, public :: init => init_poisson_3d
+        procedure, public :: solve => solve_poisson_3d
+        procedure :: alloc => allocate_poisson_3d
+        procedure, public :: finalize => finalize_poisson_3d
+    end type t_poisson_3d
 
 contains
 
@@ -59,7 +87,8 @@ contains
         real(rp) :: dx
 
         ! work
-        nx = grid%nx; ny = grid%ny; dx = grid%dx
+        nx = grid%nx; ny = grid%ny
+        dx = grid%dx
         self%nx = nx; self%ny = ny
         call self%alloc
 
@@ -155,4 +184,119 @@ contains
         call destroy_plan(self%backward)
 
     end subroutine finalize_poisson_2d
+
+
+
+    subroutine init_poisson_3d(self, grid)
+        ! interface
+        class(t_poisson_3d) :: self
+        type(t_rectilinear_3d) :: grid
+
+        ! local
+        integer  :: nx, ny, nz
+        real(rp) :: dx, dy
+
+        ! work
+        nx = grid%nx; ny = grid%ny; nz = grid%nz
+        dx = grid%dx; dy = grid%dy
+        self%nx = nx; self%ny = ny; self%nz = nz
+        call self%alloc
+
+        ! setup operator
+        call fft_laplacian(nx, dx, self%laplacian_x)
+        call fft_laplacian(ny, dy, self%laplacian_y)
+        call matrix_laplacian(nz, grid%dzf, grid%dzc, self%a, self%b, self%c)
+
+        ! plan FFT
+        self%forward(1) = create_r2r_3d(nx, ny, nz, DFT, 0) ! X
+        self%forward(2) = create_r2r_3d(nx, ny, nz, DFT, 1) ! Y
+        self%backward(1) = create_r2r_3d(nx, ny, nz, IDFT, 1) ! Y
+        self%backward(2) = create_r2r_3d(nx, ny, nz, IDFT, 0) ! X
+        self%factor = 1.0_rp/real(nx*ny, rp)
+
+    end subroutine init_poisson_3d
+
+    subroutine solve_poisson_3d(self, phi)
+        ! interface
+        class(t_poisson_3d) :: self
+        real(rp), dimension(0:, 0:, 0:) :: phi
+
+        ! local
+        integer :: i, j
+
+        ! work
+        associate(nx => self%nx, ny => self%ny, nz => self%nz, &
+                  work=>self%work, &
+                  forward=>self%forward, backward=>self%backward, &
+                  a=>self%a, b=>self%b, c=>self%c, bb=>self%bb, &
+                  laplacian_x=>self%laplacian_x, laplacian_y => self%laplacian_y)
+
+            ! Copy to work array
+            work(:, :, :) = phi(1:nx, 1:ny, 1:nz)
+
+            ! forward transform X -> Y
+            call execute_fft_3d(forward(1), work)
+            call execute_fft_3d(forward(2), work)
+
+            do j = 1, ny
+                do i = 1, nx
+                    bb(:) = b(:) + laplacian_x(i) + laplacian_y(j)
+                    call tridag(a, bb, c, work(i, j, :), nz)
+                end do
+            end do
+
+            ! backward transform Y -> X
+            call execute_fft_3d(backward(1), work)
+            call execute_fft_3d(backward(2), work)
+        end associate
+    end subroutine solve_poisson_3d
+
+    subroutine allocate_poisson_3d(self)
+        ! interface
+        class(t_poisson_3d) :: self
+
+        associate(nx => self%nx, ny => self%ny, nz => self%nz)
+            allocate(self%laplacian_x(nx))
+            allocate(self%laplacian_y(ny))
+            allocate(self%a(nz), self%b(nz), self%c(nz), self%bb(nz))
+            allocate(self%work(nx, ny, nz))
+        end associate
+
+        print *, "t_poisson_3d resource allocated"
+
+    end subroutine allocate_poisson_3d
+
+    subroutine finalize_poisson_3d(self)
+        ! interface
+        class(t_poisson_3d) :: self
+
+        ! Deallocate laplacian_x and laplacian y
+        if (allocated(self%laplacian_x)) then
+            deallocate(self%laplacian_x)
+        endif
+        if (allocated(self%laplacian_y)) then
+            deallocate(self%laplacian_y)
+        endif
+
+        ! Deallocate a, b, c
+        if (allocated(self%a)) then
+            deallocate(self%a)
+        endif
+        if (allocated(self%b)) then
+            deallocate(self%b)
+        endif
+        if (allocated(self%c)) then
+            deallocate(self%c)
+        endif
+        if (allocated(self%bb)) deallocate(self%bb)
+
+        ! Deallocate work
+        if (allocated(self%work)) then
+            deallocate(self%work)
+        endif
+
+
+        call destroy_plan(self%forward(1)); call destroy_plan(self%forward(2))
+        call destroy_plan(self%backward(1)); call destroy_plan(self%backward(2))
+    end subroutine finalize_poisson_3d
 end module m_poisson

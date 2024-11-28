@@ -114,7 +114,7 @@ contains
         integer, intent(in) :: dir
 
         ! local
-        real(rp) :: in(nx, ny, nz), out(nx, ny, nz)
+        real(rp) :: in(nx, ny, nz)
         integer :: rank, howmany_rank
         type(fftw_iodim), allocatable :: dims(:), howmany_dims(:)
 
@@ -160,7 +160,7 @@ contains
         end if
 
 
-        plan = fftw_plan_guru_r2r(rank, dims, howmany_rank, howmany_dims, in, out, [itype], FFTW_ESTIMATE)
+        plan = fftw_plan_guru_r2r(rank, dims, howmany_rank, howmany_dims, in, in, [itype], FFTW_ESTIMATE)
 
         deallocate(dims, howmany_dims)
     end function create_r2r_3d

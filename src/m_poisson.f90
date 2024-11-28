@@ -9,7 +9,9 @@ module m_poisson
     use m_rectilinear, only: t_rectilinear_2d
     use m_laplacian, only: fft_laplacian, matrix_laplacian
     use m_fft, only: DFT, IDFT
-    use m_fft, only: create_r2r_2d, execute_fft_2d, destroy_plan
+    use m_fft, only: create_r2r_2d, execute_fft_2d
+    use m_fft, only: create_r2r_3d, execute_fft_3d
+    use m_fft, only: destroy_plan
     use, intrinsic :: iso_c_binding, only: c_ptr
     use m_tdma, only: tridag
 
@@ -42,6 +44,8 @@ module m_poisson
         procedure :: alloc => allocate_poisson_2d
         procedure, public :: finalize => finalize_poisson_2d
     end type t_poisson_2d
+
+    
 
 contains
 
@@ -88,12 +92,7 @@ contains
             work(:, :) = phi(1:nx, 1:ny)
 
             call execute_fft_2d(forward, work)
-            block
-                integer :: iunit
-                open(newunit=iunit, file='demo_2d.bin', access='stream', form='unformatted', status="replace")
-                write(iunit) work
-                close(iunit)
-            end block
+
             ! now we have
             ! (\lambda_x)_i/dx^2 \tilde{\phi}_{i, j} + a_j* ..
 

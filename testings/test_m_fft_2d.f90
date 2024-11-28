@@ -12,8 +12,8 @@ program test_m_fft_2d
     integer :: i, iunit
     real(rp) :: factor ! FFT normalize factor
 
-    nx = 128
-    ny = 64
+    nx = 256
+    ny = 256
     allocate(in(nx, ny), work(nx, ny))
 
     open(newunit=iunit, file='data.bin', access='stream', form='unformatted')

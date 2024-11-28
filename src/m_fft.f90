@@ -48,7 +48,7 @@ contains
         integer, intent(in) :: dir
 
         ! local
-        real(rp) :: in(nx, ny), out(nx, ny)
+        real(rp) :: in(nx, ny)
         integer :: rank, howmany_rank
         type(fftw_iodim), allocatable :: dims(:), howmany_dims(:)
 
@@ -69,6 +69,7 @@ contains
             ! stride of j increment: nx
             howmany_dims(1)%is = nx
             howmany_dims(1)%os = nx
+
         else if (dir == Y) then
             ! 1D FFT of size ny
             dims(1)%n  = ny
@@ -83,7 +84,7 @@ contains
             howmany_dims(1)%os = 1
         end if
 
-        plan = fftw_plan_guru_r2r(rank, dims, howmany_rank, howmany_dims, in, out, [itype], FFTW_ESTIMATE)
+        plan = fftw_plan_guru_r2r(rank, dims, howmany_rank, howmany_dims, in, in, [itype], FFTW_ESTIMATE)
 
         deallocate(dims, howmany_dims)
     end function create_r2r_2d

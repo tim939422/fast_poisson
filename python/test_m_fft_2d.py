@@ -5,8 +5,8 @@ import os
 if __name__ == "__main__":
     data_root = '/Users/duosifan/Desktop/code_development/tutorials/fast_poisson/run/test_m_fft_2d'
 
-    nx = 128
-    ny = 64
+    nx = 256
+    ny = 256
     data = np.random.random((ny, nx))
     data.tofile(os.path.join(data_root, 'data.bin'))
 

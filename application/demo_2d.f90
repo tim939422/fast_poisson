@@ -17,6 +17,8 @@ program demo_2d
     real(rp) :: relative_error
 
     nx = 128; ny = 128
+    write(*, *) 'Input: Nx, Ny'
+    read(*, *) nx, ny
 
     ! allocate memory for main program
     allocate(phi(0:nx + 1, 0:ny + 1), sol(0:nx + 1, 0:ny + 1), ref(0:nx + 1, 0:ny + 1))

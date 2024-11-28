@@ -12,14 +12,18 @@ class Poisson2D:
         self.laplacian_x = laplacian_x
         self.a = a; self.b = b; self.c = c
 
+
         self.work = np.zeros((ny, nx))
 
     def solve(self, phi):
         self.work[:, :] = phi[1:self.ny + 1, 1:self.nx + 1]
+        
 
         # forward transform
         for j in range(self.ny):
             self.work[j, :] = fftw_r2hc(self.work[j, :])
+
+        self.work.tofile('demo_2d_python.bin')
 
         # solve linear system
         for i in range(self.nx):

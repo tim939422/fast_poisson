@@ -9,4 +9,5 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/.modules)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR})
 
 add_subdirectory(src)
+add_subdirectory(application)
 add_subdirectory(testings)

@@ -12,7 +12,7 @@ module m_metrics
     public :: staggered_metric
     
 contains
-    subroutine staggered_metric(n, zf, zc, dzf, dzc)
+    subroutine staggered_metric(n, xf, xc, dxf, dxc)
         !> calculate grid metric dx/dxi by FD2
         !>
         !> note - 
@@ -25,9 +25,9 @@ contains
         !> number of segments
         integer, intent(in)  :: n
         !> grid face and cell coordinate
-        real(rp), intent(in), dimension(0:) :: zf, zc
+        real(rp), intent(in), dimension(0:) :: xf, xc
         !> grid metric at face and cell coordinate
-        real(rp), intent(out), dimension(0:) :: dzf, dzc
+        real(rp), intent(out), dimension(0:) :: dxf, dxc
 
         ! local
         integer :: i
@@ -36,15 +36,15 @@ contains
 
         ! face metric
         do i = 0, n
-            dzf(i) = zc(i + 1) - zc(i)
+            dxf(i) = xc(i + 1) - xc(i)
         end do
-        dzf(n + 1) = dzf(n)
+        dxf(n + 1) = dxf(n)
 
         ! cell metric
         do i = 1, n + 1
-            dzc(i) = zf(i) - zf(i - 1)
+            dxc(i) = xf(i) - xf(i - 1)
         end do
-        dzc(0) = dzc(1)
+        dxc(0) = dxc(1)
 
     end subroutine staggered_metric
 end module m_metrics

@@ -4,8 +4,9 @@ module m_poisson
     !> copyright - Yang Group, BUAA
     !>
     !> author - D. Fan, 2024-11-28
+
+    use m_kinds, only: rp
     implicit none
-    
-contains
+
     
 end module m_poisson

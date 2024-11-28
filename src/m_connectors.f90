@@ -1,6 +1,6 @@
-module m_grids
+module m_connectors
 
-    !> module of Cartesian grid generator and metric calculation
+    !> module of 1D connector generator
     !>
     !> copyright - Yang Group, BUAA
     !>
@@ -60,8 +60,10 @@ contains
         integer, intent(in)  :: n
         !> domain length
         real(rp), intent(in) :: L
-        !> grid face and cell coordinate
-        real(rp), intent(out), dimension(0:) :: xf, xc
+        !> grid face coordinate
+        real(rp), intent(out), dimension(0:) :: xf
+        !> grid cell coordinate
+        real(rp), intent(out), dimension(0:) :: xc
 
         ! local
 
@@ -161,4 +163,4 @@ contains
         xc(0) = 2.0_rp*xf(0) - xc(1)
 
     end subroutine face2cell
-end module m_grids
+end module m_connectors

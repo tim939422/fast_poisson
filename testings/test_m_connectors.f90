@@ -1,7 +1,7 @@
-program test_m_grids
+program test_m_connectors
     use m_kinds, only: rp
     use m_constants, only: PI
-    use m_grids, only: staggered_twoside_stretched, staggered_uniform
+    use m_connectors, only: staggered_twoside_stretched, staggered_uniform
     implicit none
     
     integer :: n
@@ -36,4 +36,4 @@ program test_m_grids
     close(iunit)
     deallocate(xf, xc)
 
-end program test_m_grids
+end program test_m_connectors

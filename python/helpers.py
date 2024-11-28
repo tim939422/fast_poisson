@@ -45,6 +45,7 @@ def staggered_metric(N, zf, zc):
 
     for i in range(1, N + 2):
         dzc[i] = zf[i] - zf[i - 1]
+    dzc[0] = dzc[1]
 
     return dzf, dzc
     

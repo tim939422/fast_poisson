@@ -1,9 +1,8 @@
-# Add the library
-add_library(FastPoisson STATIC
-    m_constants.f90
-    m_grids.f90
-    m_kinds.f90
-)
+# Glob all Fortran source files in the current directory
+file(GLOB FORTRAN_SOURCES "*.f90" "*.F90" "*.f")
+
+# Add the library using the globbed Fortran files
+add_library(FastPoisson STATIC ${FORTRAN_SOURCES})
 
 # Set the module output directory for Fortran modules
 set_target_properties(FastPoisson PROPERTIES

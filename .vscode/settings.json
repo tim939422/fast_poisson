@@ -1,0 +1,8 @@
+{
+    "fortran.linter.includePaths": [
+        "${workspaceFolder}/.modules"
+    ],
+    "fortran.linter.extraArgs": [
+        "-J${workspaceFolder}/.modules"
+    ]
+}

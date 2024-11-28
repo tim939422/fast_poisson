@@ -23,7 +23,7 @@ module m_fft
     integer, parameter :: Z = 2
     
     !> Declare public interface
-    public :: create_r2r_2d, execute_fft_2d, destroy_plan
+    public :: create_r2r_2d, create_r2r_3d, execute_fft_2d, execute_fft_3d, destroy_plan
 contains
     function create_r2r_2d(nx, ny, itype, dir) result(plan)
         !> function to create FFTW 3 plan of 1D real to real FFT of 2D array with guru interface
@@ -88,6 +88,82 @@ contains
         deallocate(dims, howmany_dims)
     end function create_r2r_2d
 
+    function create_r2r_3d(nx, ny, nz, itype, dir) result(plan)
+        !> function to create FFTW 3 plan of 1D real to real FFT of 3D array with guru interface
+        !>
+        !> note - everything is unnormalized
+        !>
+        !> copyright - Yang Group, BUAA
+        !>
+        !> author - D. Fan, 2024-11-28
+        
+        ! return type
+        type(c_ptr) :: plan
+
+        ! interface
+        !> dimension in x
+        integer, intent(in) :: nx
+        !> dimension in y
+        integer, intent(in) :: ny
+        !> dimension in z
+        integer, intent(in) :: nz
+        !> FFT type available: DFT, IDFT
+        integer, intent(in) :: itype
+        !> direction of FFT available: X-0, Y-1, Z-2
+        integer, intent(in) :: dir
+
+        ! local
+        real(rp) :: in(nx, ny, nz), out(nx, ny, nz)
+        integer :: rank, howmany_rank
+        type(fftw_iodim), allocatable :: dims(:), howmany_dims(:)
+
+        ! work
+        rank = 1
+        howmany_rank = 2
+        allocate(dims(rank), howmany_dims(howmany_rank))
+
+        if (dir == X) then
+            ! 1D FFT of size nx
+            dims(1)%n  = nx
+            ! stride of i increment: 1
+            dims(1)%is = 1
+            dims(1)%os = 1
+
+            ! Perform 1D FFT ny*nz times
+            howmany_dims(1)%n = ny
+            ! stride of j increment: nx
+            howmany_dims(1)%is = nx
+            howmany_dims(1)%os = nx
+
+            howmany_dims(2)%n = nz
+            ! stride of k increment: nx*ny
+            howmany_dims(2)%is = nx*ny
+            howmany_dims(2)%os = nx*ny
+        else if (dir == Y) then
+            ! 1D FFT of size ny
+            dims(1)%n  = ny
+            ! stride of j increment: nx
+            dims(1)%is = nx
+            dims(1)%os = nx
+
+            ! Perform 1D FFT nx*nz times
+            howmany_dims(1)%n = nx
+            ! stride of i increment: 1
+            howmany_dims(1)%is = 1
+            howmany_dims(1)%os = 1
+
+            howmany_dims(2)%n = nz
+            ! stride of k increment: nx*ny
+            howmany_dims(2)%is = nx*ny
+            howmany_dims(2)%os = nx*ny
+        end if
+
+
+        plan = fftw_plan_guru_r2r(rank, dims, howmany_rank, howmany_dims, in, out, [itype], FFTW_ESTIMATE)
+
+        deallocate(dims, howmany_dims)
+    end function create_r2r_3d
+
     subroutine execute_fft_2d(plan, work)
         !> Wrapper for fftw_execute_r2r
         !>
@@ -106,6 +182,25 @@ contains
         call fftw_execute_r2r(plan, work, work)
 
     end subroutine execute_fft_2d
+
+    subroutine execute_fft_3d(plan, work)
+        !> Wrapper for fftw_execute_r2r
+        !>
+        !> note - work should be contiguous and aligned
+        !>
+        !> copyright - Yang Group, BUAA
+        !>
+        !> author - D. Fan, 2024-11-28
+
+        ! interface
+        !> FFTW 3 plan
+        type(c_ptr), intent(in) :: plan
+        !> work array (in-place transform)
+        real(rp), intent(inout) :: work(:, :, :)
+
+        call fftw_execute_r2r(plan, work, work)
+
+    end subroutine execute_fft_3d
 
     subroutine destroy_plan(plan)
         !> Wrapper for fftw_destroy_plan

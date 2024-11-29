@@ -15,8 +15,6 @@ module m_poisson
     use, intrinsic :: iso_c_binding, only: c_ptr
     use m_tdma, only: tridag
 
-    use m_io, only: array_write_1d, array_write_2d, array_write_3d
-
     implicit none
 
     private
@@ -119,19 +117,10 @@ contains
                   a=>self%a, b=>self%b, c=>self%c, bb=>self%bb, &
                   laplacian_x=>self%laplacian_x)
             
-            call array_write_1d('a.bin', a)
-            call array_write_1d('b.bin', b)
-            call array_write_1d('c.bin', c)
-            call array_write_1d('laplacian_x.bin', laplacian_x)
             ! Copy to work array
             work(:, :) = phi(1:nx, 1:ny)
 
             call execute_fft_2d(forward, work)
-
-            call array_write_2d('work_DFT_x.bin', work)
-
-            ! now we have
-            ! (\lambda_x)_i/dx^2 \tilde{\phi}_{i, j} + a_j* ..
 
             do i = 1, nx
                 bb(:) = b(:) + laplacian_x(i)
@@ -239,24 +228,13 @@ contains
                   forward=>self%forward, backward=>self%backward, &
                   a=>self%a, b=>self%b, c=>self%c, bb=>self%bb, &
                   laplacian_x=>self%laplacian_x, laplacian_y => self%laplacian_y)
-
-            call array_write_1d('a.bin', a)
-            call array_write_1d('b.bin', b)
-            call array_write_1d('c.bin', c)
-            call array_write_1d('laplacian_x.bin', laplacian_x)
-            call array_write_1d('laplacian_y.bin', laplacian_y)
             
             ! Copy to work array
             work(:, :, :) = phi(1:nx, 1:ny, 1:nz)
 
             ! forward transform X -> Y
             call execute_fft_3d(forward(1), work)
-
-            call array_write_3d('work_DFT_x.bin', work)
-
             call execute_fft_3d(forward(2), work)
-
-            call array_write_3d('work_DFT_y.bin', work)
             
             do j = 1, ny
                 do i = 1, nx
@@ -264,8 +242,6 @@ contains
                     call tridag(a, bb, c, work(i, j, :), nz)
                 end do
             end do
-
-            call array_write_3d('work_tridag.bin', work)
 
             ! backward transform Y -> X
             call execute_fft_3d(backward(1), work)

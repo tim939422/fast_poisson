@@ -4,7 +4,6 @@ program demo_2d
     use m_rectilinear, only: t_rectilinear_3d
     use m_poisson, only: t_poisson_3d
     use m_gradients, only: t_gradient_3d
-    use m_io, only: array_write_1d, array_write_2d, array_write_3d
 
     implicit none
     real(rp), parameter :: Lx = 4.0_rp*PI, Ly = 2.0_rp*PI, Lz = 2.0_rp 
@@ -17,7 +16,10 @@ program demo_2d
     integer :: i, j, k
     real(rp) :: relative_error
 
-    nx = 16; ny = 16; nz = 16
+    print *, 'input N'
+    read(*, *) nx
+    ny = nx
+    nz = nx
 
     ! allocate memory for main program
     allocate(phi(0:nx + 1, 0:ny + 1, 0:nz + 1), sol(0:nx + 1, 0:ny + 1, 0:nz + 1 ), ref(0:nx + 1, 0:ny + 1, 0:nz +1))
@@ -25,16 +27,6 @@ program demo_2d
     ! initialize all objects
     call channel_grid%init(nx, ny, nz, Lx, Ly, Lz, beta)
     
-    call array_write_1d('xf.bin', channel_grid%xf)
-    call array_write_1d('yf.bin', channel_grid%yf)
-    call array_write_1d('zf.bin', channel_grid%zf)
-
-    call array_write_1d('xc.bin', channel_grid%xc)
-    call array_write_1d('yc.bin', channel_grid%yc)
-    call array_write_1d('zc.bin', channel_grid%zc)
-
-    call array_write_1d('dzf.bin', channel_grid%dzf)
-    call array_write_1d('dzc.bin', channel_grid%dzc)
 
     call potential_solver%init(channel_grid)
     call gradient%init(channel_grid)
@@ -50,7 +42,6 @@ program demo_2d
             end do
         end do
     end associate
-    call array_write_3d('phi_S.bin', phi)
 
 
     call potential_solver%solve(phi)

@@ -1,7 +1,7 @@
 module m_gradients
 
     use m_kinds, only: rp
-    use m_rectilinear, only: t_rectilinear_2d, t_rectilinear_3d
+    use m_rectilinear, only: t_rectilinear_2d, t_rectilinear
 
     implicit none
     
@@ -108,7 +108,7 @@ contains
     subroutine init_gradient_3d(self, grid)
         ! interface
         class(t_gradient_3d) :: self
-        type(t_rectilinear_3d) :: grid
+        type(t_rectilinear) :: grid
 
         ! local
         integer  :: nx, ny, nz
@@ -120,7 +120,7 @@ contains
         self%invdx = 1.0_rp/grid%dx
         self%invdy = 1.0_rp/grid%dy
         allocate(self%invdzf(0:nz + 1))
-        self%invdzf(:) = 1.0_rp/grid%dzf(:)
+        self%invdzf(:) = 1.0_rp/grid%dsf(:)
 
     end subroutine init_gradient_3d
 

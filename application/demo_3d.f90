@@ -1,7 +1,7 @@
 program demo_2d
     use m_kinds, only: rp
     use m_constants, only: PI
-    use m_rectilinear, only: t_rectilinear_3d
+    use m_rectilinear, only: t_rectilinear
     use m_poisson, only: t_poisson_3d
     use m_gradients, only: t_gradient_3d
 
@@ -9,7 +9,7 @@ program demo_2d
     real(rp), parameter :: Lx = 4.0_rp*PI, Ly = 2.0_rp*PI, Lz = 2.0_rp 
     real(rp), parameter :: beta = 1.2_rp
     integer :: nx, ny, nz
-    type(t_rectilinear_3d) :: channel_grid
+    type(t_rectilinear) :: channel_grid
     type(t_poisson_3d) :: potential_solver
     type(t_gradient_3d) :: gradient
     real(rp), allocatable, dimension(:, :, :) :: phi, sol, ref
@@ -25,7 +25,7 @@ program demo_2d
     allocate(phi(0:nx + 1, 0:ny + 1, 0:nz + 1), sol(0:nx + 1, 0:ny + 1, 0:nz + 1 ), ref(0:nx + 1, 0:ny + 1, 0:nz +1))
 
     ! initialize all objects
-    call channel_grid%init(nx, ny, nz, Lx, Ly, Lz, beta)
+    call channel_grid%init([nx, ny, nz], [Lx, Ly, Lz], beta)
     
 
     call potential_solver%init(channel_grid)

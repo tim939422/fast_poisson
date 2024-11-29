@@ -67,22 +67,28 @@ class Poisson3D:
     def solve(self, phi):
         self.work[:, :, :] = phi[1:self.nz + 1, 1:self.ny + 1, 1:self.nx + 1]
 
+        self.work.tofile('scratch/python/work_before.bin')
+
         # forward transform
         # x transform
         for k in range(self.nz):
             for j in range(self.ny):
                 self.work[k, j, :] = fftw_r2hc(self.work[k, j, :])
-    
+        
+
         # y transform
         for k in range(self.nz):
             for i in range(self.nx):
                 self.work[k, :, i] = fftw_r2hc(self.work[k, :, i])
-        
+
+        self.work.tofile('scratch/python/work_after.bin')
+
         # solve linear system
         for j in range(self.ny):
             for i in range(self.nx):
                 bb = self.b + self.laplacian_x[i] + self.laplacian_y[j]
                 tridag(self.a, bb, self.c, self.work[:, j, i], self.nz)
+
 
         # backward transform
         # y transform

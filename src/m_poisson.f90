@@ -205,7 +205,21 @@ contains
         ! setup operator
         call fft_laplacian(nx, dx, self%laplacian_x)
         call fft_laplacian(ny, dy, self%laplacian_y)
+
+        block
+            integer :: iunit
+
+            open(newunit=iunit, file='scratch/fortran/dzc.bin', access='stream', status='replace', form='unformatted')
+            write(iunit) grid%dzc
+            close(iunit)
+
+            open(newunit=iunit, file='scratch/fortran/dzf.bin', access='stream', status='replace', form='unformatted')
+            write(iunit) grid%dzf
+            close(iunit)
+        end block
+
         call matrix_laplacian(nz, grid%dzf, grid%dzc, self%a, self%b, self%c)
+
 
         ! plan FFT
         self%forward(1) = create_r2r_3d(nx, ny, nz, DFT, 0) ! X
@@ -234,10 +248,24 @@ contains
             ! Copy to work array
             work(:, :, :) = phi(1:nx, 1:ny, 1:nz)
 
+            block
+                integer :: iunit
+                open(newunit=iunit, file='scratch/fortran/work_before.bin', access='stream', status='replace', form='unformatted')
+                write(iunit) work
+                close(iunit)
+            end block
+
             ! forward transform X -> Y
             call execute_fft_3d(forward(1), work)
             call execute_fft_3d(forward(2), work)
 
+            block
+                integer :: iunit
+                open(newunit=iunit, file='scratch/fortran/work_after.bin', access='stream', status='replace', form='unformatted')
+                write(iunit) work
+                close(iunit)
+            end block
+            
             do j = 1, ny
                 do i = 1, nx
                     bb(:) = b(:) + laplacian_x(i) + laplacian_y(j)

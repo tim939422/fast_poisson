@@ -16,10 +16,7 @@ program demo_2d
     integer :: i, j, k
     real(rp) :: relative_error
 
-    nx = 128; ny = 128; nz = 128
-    write(*, *) 'Input: N'
-    read(*, *) nx
-    ny = nx; nz = nx
+    nx = 16; ny = 16; nz = 16
 
     ! allocate memory for main program
     allocate(phi(0:nx + 1, 0:ny + 1, 0:nz + 1), sol(0:nx + 1, 0:ny + 1, 0:nz + 1 ), ref(0:nx + 1, 0:ny + 1, 0:nz +1))

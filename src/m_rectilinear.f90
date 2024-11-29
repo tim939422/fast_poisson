@@ -237,7 +237,7 @@ contains
     end subroutine allocate_rectilinear_3d
 
     subroutine finalize_rectilinear_3d(self)
-        !> free resource for type t_rectilinear_22d
+        !> free resource for type t_rectilinear_2d
         !>
         !> note - 
         !>

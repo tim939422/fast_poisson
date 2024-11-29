@@ -3,7 +3,7 @@ program demo_2d
     use m_constants, only: PI
     use m_rectilinear, only: t_rectilinear
     use m_poisson, only: t_poisson_2d
-    use m_gradients, only: t_gradient_2d
+    use m_gradients, only: t_gradient
 
     implicit none
     real(rp), parameter :: Lx = 4.0_rp*PI, Ly = 2.0_rp
@@ -11,7 +11,7 @@ program demo_2d
     integer :: nx, ny
     type(t_rectilinear) :: channel_grid
     type(t_poisson_2d) :: potential_solver
-    type(t_gradient_2d) :: gradient
+    type(t_gradient) :: gradient
     real(rp), allocatable, dimension(:, :) :: phi, sol, ref
     integer :: i, j
     real(rp) :: relative_error
@@ -47,7 +47,7 @@ program demo_2d
     phi(:, ny + 1) = phi(:, ny)
     
     ! Verification
-    call gradient%dpdx(phi, sol)
+    call gradient%gradpx_2d(phi, sol)
     associate(xf => channel_grid%xf, yc => channel_grid%yc)
         do j = 1, ny
             do i = 0, nx
@@ -58,7 +58,7 @@ program demo_2d
     relative_error = norm2(ref(0:nx, 1:ny) - sol(0:nx, 1:ny))/norm2(ref(0:nx, 1:ny))
     write(*, '("Relative error in dphi/dx ", es23.15)') relative_error
 
-    call gradient%dpdy(phi, sol)
+    call gradient%gradpy_2d(phi, sol)
     associate(xc => channel_grid%xc, yf => channel_grid%yf)
         do j = 0, ny
             do i = 1, nx

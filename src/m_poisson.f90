@@ -45,7 +45,7 @@ module m_poisson
         procedure, public :: finalize => finalize_poisson_2d
     end type t_poisson_2d
 
-    type, public :: t_poisson_3d
+    type, public :: t_poisson
         private
         !> dimension in x (# of cells)
         integer, public :: nx
@@ -69,11 +69,11 @@ module m_poisson
         real(rp) :: factor
     contains
         private
-        procedure, public :: init => init_poisson_3d
+        procedure, public :: init => init_poisson
         procedure, public :: solve => solve_poisson_3d
-        procedure :: alloc => allocate_poisson_3d
-        procedure, public :: finalize => finalize_poisson_3d
-    end type t_poisson_3d
+        procedure :: alloc => allocate_poisson
+        procedure, public :: finalize => finalize_poisson
+    end type t_poisson
 
 contains
 
@@ -186,9 +186,9 @@ contains
 
 
 
-    subroutine init_poisson_3d(self, grid)
+    subroutine init_poisson(self, grid)
         ! interface
-        class(t_poisson_3d) :: self
+        class(t_poisson) :: self
         type(t_rectilinear) :: grid
 
         ! local
@@ -214,11 +214,11 @@ contains
         self%backward(2) = create_r2r_3d(nx, ny, nz, IDFT, 0) ! X
         self%factor = 1.0_rp/real(nx*ny, rp)
 
-    end subroutine init_poisson_3d
+    end subroutine init_poisson
 
     subroutine solve_poisson_3d(self, phi)
         ! interface
-        class(t_poisson_3d) :: self
+        class(t_poisson) :: self
         real(rp), dimension(0:, 0:, 0:) :: phi
 
         ! local
@@ -255,9 +255,9 @@ contains
 
     end subroutine solve_poisson_3d
 
-    subroutine allocate_poisson_3d(self)
+    subroutine allocate_poisson(self)
         ! interface
-        class(t_poisson_3d) :: self
+        class(t_poisson) :: self
 
         associate(nx => self%nx, ny => self%ny, nz => self%nz)
             allocate(self%laplacian_x(nx))
@@ -268,11 +268,11 @@ contains
 
         print *, "t_poisson_3d resource allocated"
 
-    end subroutine allocate_poisson_3d
+    end subroutine allocate_poisson
 
-    subroutine finalize_poisson_3d(self)
+    subroutine finalize_poisson(self)
         ! interface
-        class(t_poisson_3d) :: self
+        class(t_poisson) :: self
 
         ! Deallocate laplacian_x and laplacian y
         if (allocated(self%laplacian_x)) then
@@ -302,5 +302,5 @@ contains
 
         call destroy_plan(self%forward(1)); call destroy_plan(self%forward(2))
         call destroy_plan(self%backward(1)); call destroy_plan(self%backward(2))
-    end subroutine finalize_poisson_3d
+    end subroutine finalize_poisson
 end module m_poisson

@@ -2,16 +2,16 @@ program demo_2d
     use m_kinds, only: rp
     use m_constants, only: PI
     use m_rectilinear, only: t_rectilinear
-    use m_poisson, only: t_poisson_3d
-    use m_gradients, only: t_gradient_3d
+    use m_poisson, only: t_poisson
+    use m_gradients, only: t_gradient
 
     implicit none
     real(rp), parameter :: Lx = 4.0_rp*PI, Ly = 2.0_rp*PI, Lz = 2.0_rp 
     real(rp), parameter :: beta = 1.2_rp
     integer :: nx, ny, nz
     type(t_rectilinear) :: channel_grid
-    type(t_poisson_3d) :: potential_solver
-    type(t_gradient_3d) :: gradient
+    type(t_poisson) :: potential_solver
+    type(t_gradient) :: gradient
     real(rp), allocatable, dimension(:, :, :) :: phi, sol, ref
     integer :: i, j, k
     real(rp) :: relative_error
@@ -58,7 +58,7 @@ program demo_2d
     phi(:, :, nz + 1) = phi(:, :, nz)
     
     ! Verification
-    call gradient%dpdx(phi, sol)
+    call gradient%gradpx_3d(phi, sol)
     associate(xf => channel_grid%xf, yc => channel_grid%yc, zc => channel_grid%zc)
         do k = 1, nz
             do j = 1, ny
@@ -71,7 +71,7 @@ program demo_2d
     relative_error = norm2(ref(0:nx, 1:ny, 1:nz) - sol(0:nx, 1:ny, 1:nz))/norm2(ref(0:nx, 1:ny, 1:nz))
     write(*, '("Relative error in dphi/dx ", es23.15)') relative_error
 
-    call gradient%dpdy(phi, sol)
+    call gradient%gradpy_3d(phi, sol)
     associate(xc => channel_grid%xc, yf => channel_grid%yf, zc => channel_grid%zc)
         do k = 1, nz
             do j = 0, ny
@@ -85,7 +85,7 @@ program demo_2d
     write(*, '("Relative error in dphi/dy ", es23.15)') relative_error
 
 
-    call gradient%dpdz(phi, sol)
+    call gradient%gradpz_3d(phi, sol)
     associate(xc => channel_grid%xc, yc => channel_grid%yc, zf => channel_grid%zf)
         do k = 0, nz
             do j = 1, ny

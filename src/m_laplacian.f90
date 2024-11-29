@@ -73,8 +73,8 @@ contains
 
         ! work
         do i = 1, n
-            a(i) = 1/(dzf(i - 1)*dzc(i))
-            c(i) = 1/(dzf(i)*dzc(i))
+            a(i) = 1.0_rp/(dzf(i - 1)*dzc(i))
+            c(i) = 1.0_rp/(dzf(i)*dzc(i))
             b(i) = -(a(i) + c(i))
         end do
 

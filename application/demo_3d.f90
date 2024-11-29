@@ -4,6 +4,7 @@ program demo_2d
     use m_rectilinear, only: t_rectilinear_3d
     use m_poisson, only: t_poisson_3d
     use m_gradients, only: t_gradient_3d
+    use m_io, only: array_write_1d, array_write_2d, array_write_3d
 
     implicit none
     real(rp), parameter :: Lx = 4.0_rp*PI, Ly = 2.0_rp*PI, Lz = 2.0_rp 
@@ -23,19 +24,34 @@ program demo_2d
 
     ! initialize all objects
     call channel_grid%init(nx, ny, nz, Lx, Ly, Lz, beta)
+    
+    call array_write_1d('xf.bin', channel_grid%xf)
+    call array_write_1d('yf.bin', channel_grid%yf)
+    call array_write_1d('zf.bin', channel_grid%zf)
+
+    call array_write_1d('xc.bin', channel_grid%xc)
+    call array_write_1d('yc.bin', channel_grid%yc)
+    call array_write_1d('zc.bin', channel_grid%zc)
+
+    call array_write_1d('dzf.bin', channel_grid%dzf)
+    call array_write_1d('dzc.bin', channel_grid%dzc)
+
     call potential_solver%init(channel_grid)
     call gradient%init(channel_grid)
 
     ! set source
+    phi(:, :, :) = 0.0_rp
     associate(xc => channel_grid%xc, yc => channel_grid%yc, zc => channel_grid%zc)
         do k = 1, nz
             do j = 1, ny
                 do i = 1, nx
-                    phi(i, j, k) = -(2_rp + 0.25_rp*PI**2)*sin(xc(i))*sin(yc(j))*cos(0.5_rp*PI*zc(k))
+                    phi(i, j, k) = -(2.0_rp + 0.25_rp*PI**2)*sin(xc(i))*sin(yc(j))*cos(0.5_rp*PI*zc(k))
                 end do
             end do
         end do
     end associate
+    call array_write_3d('phi_S.bin', phi)
+
 
     call potential_solver%solve(phi)
 

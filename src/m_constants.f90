@@ -10,6 +10,6 @@ module m_constants
     implicit none
     private
 
-    real(rp), parameter, public :: PI  = 4.0_rp*atan(1.0_rp)
+    real(rp), parameter, public :: PI  = acos(-1.0_rp)
     real(rp), parameter, public :: eps = epsilon(1.0_rp)
 end module m_constants

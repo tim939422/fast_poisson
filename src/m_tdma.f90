@@ -17,7 +17,7 @@ contains
         integer  :: j
 
         ! Decomposition and forward substitution
-        bet  = b(1)
+        bet  = b(1) + eps
         r(1) = r(1)/bet
         do j = 2, n
             gam(j) = c(j - 1)/bet
@@ -31,5 +31,5 @@ contains
         end do
     
     end subroutine tridag
-
+    
 end module m_tdma

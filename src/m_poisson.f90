@@ -6,7 +6,7 @@ module m_poisson
     !> author - D. Fan, 2024-11-28
 
     use m_kinds, only: rp
-    use m_rectilinear, only: t_rectilinear_2d, t_rectilinear
+    use m_rectilinear, only: t_rectilinear
     use m_laplacian, only: fft_laplacian, matrix_laplacian
     use m_fft, only: DFT, IDFT
     use m_fft, only: create_r2r_2d, execute_fft_2d
@@ -80,7 +80,7 @@ contains
     subroutine init_poisson_2d(self, grid)
         ! interface
         class(t_poisson_2d) :: self
-        type(t_rectilinear_2d) :: grid
+        type(t_rectilinear) :: grid
 
         ! local
         integer  :: nx, ny
@@ -94,7 +94,9 @@ contains
 
         ! setup operator
         call fft_laplacian(nx, dx, self%laplacian_x)
-        call matrix_laplacian(ny, grid%dyf, grid%dyc, self%a, self%b, self%c)
+        associate(dyf => grid%dsf, dyc => grid%dsc)
+            call matrix_laplacian(ny, dyf, dyc, self%a, self%b, self%c)
+        end associate
 
         ! plan FFT
         self%forward = create_r2r_2d(nx, ny, DFT, 0)

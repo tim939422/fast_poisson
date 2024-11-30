@@ -1,6 +1,18 @@
 module m_connectors
-
-    !> module of 1D connector generator
+    !> module of 1D staggererd connector generator with ghost points
+    !>
+    !> note - a staggered connector is described as
+    !>
+    !>              x = 0                                                 x = L
+    !>                ^                                                     ^
+    !>        xc(0) xf(0) xc(1) xf(1)          xc(i)  xf(i)         xc(n) xf(n) xc(n+1) xf(n+1)
+    !>          g-----|-----o-----| ...... |-----o-----| ...... |-----o-----|-----g-----|
+    !>          ^                                                                 ^
+    !>     ghost cell                                                        ghost cell
+    !>
+    !>     The face (xf) and cell (xc) coordinate follows
+    !>
+    !>     - xc(i) = (xf(i - 1) + xf(i))/2
     !>
     !> copyright - Yang Group, BUAA
     !>
@@ -13,6 +25,7 @@ module m_connectors
     private
 
     public :: staggered_twoside_stretched, staggered_uniform
+
 contains
 
     subroutine staggered_twoside_stretched(n, L, beta, xf, xc)
@@ -33,8 +46,6 @@ contains
         real(rp), intent(in) :: beta
         !> grid face and cell coordinate
         real(rp), intent(out), dimension(0:) :: xf, xc
-
-        ! local
 
         ! work
         ! face coordinate
@@ -65,14 +76,14 @@ contains
         !> grid cell coordinate
         real(rp), intent(out), dimension(0:) :: xc
 
-        ! local
-
         ! work
         ! face coordinate
         call uniform(n, L, xf)
         xf(n + 1) = 2.0_rp*xf(n) - xf(n - 1)
 
+        ! cell coordinate
         call face2cell(n, xf, xc)
+
     end subroutine staggered_uniform
 
     ! Private
@@ -129,7 +140,6 @@ contains
 
         ! work
         dx = L/real(n, rp)
-
         do i = 0, n
             x(i) = real(i, rp)*dx
         end do
@@ -163,4 +173,5 @@ contains
         xc(0) = 2.0_rp*xf(0) - xc(1)
 
     end subroutine face2cell
+
 end module m_connectors

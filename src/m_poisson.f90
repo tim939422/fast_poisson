@@ -1,6 +1,8 @@
 module m_poisson
     !> module of FFT acceralated Poisson Solver Class
     !>
+    !> - see docs for details
+    !>
     !> copyright - Yang Group, BUAA
     !>
     !> author - D. Fan, 2024-11-28
@@ -56,14 +58,20 @@ contains
 
 
     subroutine init_poisson(self, grid)
+        !> constructor for type t_poisson
+        !>
+        !> note - 
+        !>
+        !> copyright - Yang Group, BUAA
+        !>
+        !> author - D. Fan, 2024-11-30
+        
         ! interface
         class(t_poisson) :: self
+        !> rectilinear grid with metric information
         type(t_rectilinear) :: grid
 
-        ! local
-
         ! work
-
         copy_parameter: associate(nx => self%nx, ny => self%ny, nz => self%nz)
             nx = grid%nx; ny = grid%ny; nz = grid%nz
         end associate copy_parameter
@@ -96,11 +104,13 @@ contains
                 end if
             
             end associate
+
         end block setup_operator
 
 
         ! plan FFT
         plan_fft: associate(nx => self%nx, ny => self%ny, nz => self%nz)
+
             self%forward(1) = create_r2r(nx, ny, nz, DFT, 0) ! X
             if (nz > 1) then
                 self%forward(2) = create_r2r(nx, ny, nz, DFT, 1) ! Y
@@ -115,13 +125,24 @@ contains
                 ! 2D
                 self%factor = 1.0_rp/real(nx, rp)
             end if
+
         end associate plan_fft
 
     end subroutine init_poisson
 
     subroutine solve_poisson_3d(self, phi)
+        !> solver 3D Poisson equation on a rectilinear grid with possible
+        !> stretched grid in z
+        !>
+        !> note - 
+        !>
+        !> copyright - Yang Group, BUAA
+        !>
+        !> author - D. Fan, 2024-11-30
+        
         ! interface
         class(t_poisson) :: self
+        ! source term S in nabla^2 phi = S
         real(rp), dimension(0:, 0:, 0:) :: phi
 
         ! local
@@ -161,6 +182,15 @@ contains
     end subroutine solve_poisson_3d
 
     subroutine solve_poisson_2d(self, phi)
+        !> solver 2D Poisson equation on a rectilinear grid with possible
+        !> stretched grid in y
+        !>
+        !> note - 
+        !>
+        !> copyright - Yang Group, BUAA
+        !>
+        !> author - D. Fan, 2024-11-30
+
         ! interface
         class(t_poisson) :: self
         real(rp), dimension(0:, 0:, 0:) :: phi

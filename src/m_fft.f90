@@ -23,7 +23,7 @@ module m_fft
     integer, parameter :: Z = 2
     
     !> Declare public interface
-    public :: create_r2r_2d, create_r2r_3d, execute_fft_2d, execute_fft_3d, destroy_plan
+    public :: create_r2r_2d, create_r2r, execute_fft_2d, execute_fft, destroy_plan
 contains
     function create_r2r_2d(nx, ny, itype, dir) result(plan)
         !> function to create FFTW 3 plan of 1D real to real FFT of 2D array with guru interface
@@ -89,7 +89,7 @@ contains
         deallocate(dims, howmany_dims)
     end function create_r2r_2d
 
-    function create_r2r_3d(nx, ny, nz, itype, dir) result(plan)
+    function create_r2r(nx, ny, nz, itype, dir) result(plan)
         !> function to create FFTW 3 plan of 1D real to real FFT of 3D array with guru interface
         !>
         !> note - everything is unnormalized
@@ -163,7 +163,7 @@ contains
         plan = fftw_plan_guru_r2r(rank, dims, howmany_rank, howmany_dims, in, in, [itype], FFTW_ESTIMATE)
 
         deallocate(dims, howmany_dims)
-    end function create_r2r_3d
+    end function create_r2r
 
     subroutine execute_fft_2d(plan, work)
         !> Wrapper for fftw_execute_r2r
@@ -184,7 +184,7 @@ contains
 
     end subroutine execute_fft_2d
 
-    subroutine execute_fft_3d(plan, work)
+    subroutine execute_fft(plan, work)
         !> Wrapper for fftw_execute_r2r
         !>
         !> note - work should be contiguous and aligned
@@ -201,7 +201,7 @@ contains
 
         call fftw_execute_r2r(plan, work, work)
 
-    end subroutine execute_fft_3d
+    end subroutine execute_fft
 
     subroutine destroy_plan(plan)
         !> Wrapper for fftw_destroy_plan

@@ -58,7 +58,7 @@ program demo_2d
     phi(:, :, nz + 1) = phi(:, :, nz)
     
     ! Verification
-    call gradient%gradpx_3d(phi, sol)
+    call gradient%gradpx(phi, sol)
     associate(xf => channel_grid%xf, yc => channel_grid%yc, zc => channel_grid%zc)
         do k = 1, nz
             do j = 1, ny
@@ -85,7 +85,7 @@ program demo_2d
     write(*, '("Relative error in dphi/dy ", es23.15)') relative_error
 
 
-    call gradient%gradpz_3d(phi, sol)
+    call gradient%gradpz(phi, sol)
     associate(xc => channel_grid%xc, yc => channel_grid%yc, zf => channel_grid%zf)
         do k = 0, nz
             do j = 1, ny

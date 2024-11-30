@@ -1,7 +1,7 @@
 program test_m_fft_3d
     use, intrinsic :: iso_c_binding, only: c_ptr
     use m_kinds, only: rp
-    use m_fft, only: DFT, IDFT, create_r2r_3d, execute_fft_3d, destroy_plan
+    use m_fft, only: DFT, IDFT, create_r2r, execute_fft, destroy_plan
     implicit none
     integer :: nx, ny, nz
     real(rp), dimension(:, :, :), allocatable :: in, work
@@ -26,9 +26,9 @@ program test_m_fft_3d
     itypes = [DFT, IDFT, DFT, IDFT]
     dirs = [0, 0, 1, 1]
     do i = 1, 4
-        plans(i) = create_r2r_3d(nx, ny, nz, itypes(i), dirs(i))
+        plans(i) = create_r2r(nx, ny, nz, itypes(i), dirs(i))
         work(:, :, :) = in(:, :, :)
-        call execute_fft_3d(plans(i), work)
+        call execute_fft(plans(i), work)
 
         open(newunit=iunit, file=fnames(i), access='stream', form='unformatted')
         write(iunit) work
@@ -38,16 +38,16 @@ program test_m_fft_3d
     ! Test transform in x
     factor = 1.0_rp/real(nx, rp)
     work(:, :, :) = in(:, :, :)
-    call execute_fft_3d(plans(1), work)
-    call execute_fft_3d(plans(2), work)
+    call execute_fft(plans(1), work)
+    call execute_fft(plans(2), work)
     work(:, :, :) = factor*work(:, :, :)
     print *, norm2(in - work)
 
     ! Test transform in y
     factor = 1.0_rp/real(ny, rp)
     work(:, :, :) = in(:, :, :)
-    call execute_fft_3d(plans(3), work)
-    call execute_fft_3d(plans(4), work)
+    call execute_fft(plans(3), work)
+    call execute_fft(plans(4), work)
     work(:, :, :) = factor*work(:, :, :)
     print *, norm2(in - work)
 

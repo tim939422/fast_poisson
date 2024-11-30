@@ -1,10 +1,10 @@
 program test_m_fft_2d
     use, intrinsic :: iso_c_binding, only: c_ptr
     use m_kinds, only: rp
-    use m_fft, only: DFT, IDFT, create_r2r_2d, execute_fft_2d, destroy_plan
+    use m_fft, only: DFT, IDFT, create_r2r, execute_fft, destroy_plan
     implicit none
     integer :: nx, ny
-    real(rp), dimension(:, :), allocatable :: in, work
+    real(rp), dimension(:, :, :), allocatable :: in, work
 
     type(c_ptr) :: plans(4)
     integer :: itypes(4), dirs(4)
@@ -14,7 +14,7 @@ program test_m_fft_2d
 
     nx = 256
     ny = 256
-    allocate(in(nx, ny), work(nx, ny))
+    allocate(in(nx, ny, 1), work(nx, ny, 1))
 
     open(newunit=iunit, file='data.bin', access='stream', form='unformatted')
     read(iunit) in
@@ -25,9 +25,9 @@ program test_m_fft_2d
     itypes = [DFT, IDFT, DFT, IDFT]
     dirs = [0, 0, 1, 1]
     do i = 1, 4
-        plans(i) = create_r2r_2d(nx, ny, itypes(i), dirs(i))
-        work(:, :) = in(:, :)
-        call execute_fft_2d(plans(i), work)
+        plans(i) = create_r2r(nx, ny, 1, itypes(i), dirs(i))
+        work(:, :, :) = in(:, :, :)
+        call execute_fft(plans(i), work)
 
         open(newunit=iunit, file=fnames(i), access='stream', form='unformatted')
         write(iunit) work
@@ -36,18 +36,18 @@ program test_m_fft_2d
 
     ! Test transform in x
     factor = 1.0_rp/real(nx, rp)
-    work(:, :) = in(:, :)
-    call execute_fft_2d(plans(1), work)
-    call execute_fft_2d(plans(2), work)
-    work(:, :) = factor*work(:, :)
+    work(:, :, :) = in(:, :, :)
+    call execute_fft(plans(1), work)
+    call execute_fft(plans(2), work)
+    work(:, :, :) = factor*work(:, :, :)
     print *, norm2(in - work)
 
     ! Test transform in y
     factor = 1.0_rp/real(ny, rp)
-    work(:, :) = in(:, :)
-    call execute_fft_2d(plans(3), work)
-    call execute_fft_2d(plans(4), work)
-    work(:, :) = factor*work(:, :)
+    work(:, :, :) = in(:, :, :)
+    call execute_fft(plans(3), work)
+    call execute_fft(plans(4), work)
+    work(:, :, :) = factor*work(:, :, :)
     print *, norm2(in - work)
 
     ! Destroy all plan

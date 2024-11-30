@@ -10,10 +10,11 @@ module m_poisson
     use m_laplacian, only: fft_laplacian, matrix_laplacian
     use m_fft, only: DFT, IDFT
     use m_fft, only: create_r2r_2d, execute_fft_2d
-    use m_fft, only: create_r2r_3d, execute_fft_3d
-    use m_fft, only: destroy_plan
+    use m_fft, only: create_r2r, execute_fft, destroy_plan
     use, intrinsic :: iso_c_binding, only: c_ptr
     use m_tdma, only: tridag
+    use m_io, only: array_write_3d
+    
 
     implicit none
 
@@ -30,7 +31,7 @@ module m_poisson
         !> tridiagonal matrix in y (bb is the b + laplacian_x(i))
         real(rp), allocatable :: a(:), b(:), c(:), bb(:)
         !> work array for FFT
-        real(rp), allocatable :: work(:, :)
+        real(rp), allocatable :: work(:, :, :)
         !> forward FFT plan
         type(c_ptr) :: forward
         !> backward FFT plan
@@ -57,6 +58,8 @@ module m_poisson
         real(rp), allocatable :: laplacian_x(:)
         !> laplacian operator in y
         real(rp), allocatable :: laplacian_y(:)
+        !> pre-calculate laplacian_x(i) + laplacian_x(j)
+        real(rp), allocatable :: laplacian_xy(:, :)
         !> tridiagonal matrix in z (bb is the b + laplacian_x(i) + laplacian_x(j))
         real(rp), allocatable :: a(:), b(:), c(:), bb(:)
         !> work array for FFT
@@ -99,8 +102,8 @@ contains
         end associate
 
         ! plan FFT
-        self%forward = create_r2r_2d(nx, ny, DFT, 0)
-        self%backward = create_r2r_2d(nx, ny, IDFT, 0)
+        self%forward = create_r2r(nx, ny, 1, DFT, 0)
+        self%backward = create_r2r(nx, ny, 1, IDFT, 0)
         self%factor = 1.0_rp/real(nx, rp)
 
     end subroutine init_poisson_2d
@@ -108,7 +111,7 @@ contains
     subroutine solve_poisson_2d(self, phi)
         ! interface
         class(t_poisson_2d) :: self
-        real(rp), dimension(0:, 0:) :: phi
+        real(rp), dimension(0:, 0:, 0:) :: phi
 
         ! local
         integer :: i
@@ -120,19 +123,29 @@ contains
                   laplacian_x=>self%laplacian_x)
             
             ! Copy to work array
-            work(:, :) = phi(1:nx, 1:ny)
+            work(:, :, :) = phi(1:nx, 1:ny, 1:1)
 
-            call execute_fft_2d(forward, work)
+            block
+                integer :: iunit
+                call array_write_3d('work_DFT_x.bin', work(:, :, :))
+            end block
+
+            call execute_fft(forward, work)
+
+            block
+                integer :: iunit
+                call array_write_3d('work_DFT_x.bin', work(:, :, :))
+            end block
 
             do i = 1, nx
                 bb(:) = b(:) + laplacian_x(i)
-                call tridag(a, bb, c, work(i, :), ny)
+                call tridag(a, bb, c, work(i, :, 1), ny)
             end do
 
-            call execute_fft_2d(backward, work)
+            call execute_fft(backward, work)
 
             ! Copy back to original array
-            phi(1:nx, 1:ny) = self%factor*work(:, :)
+            phi(1:nx, 1:ny, 1:1) = self%factor*work(:, :, :)
 
         end associate
 
@@ -145,7 +158,7 @@ contains
         associate(nx => self%nx, ny=>self%ny)
             allocate(self%laplacian_x(nx))
             allocate(self%a(ny), self%b(ny), self%c(ny), self%bb(ny))
-            allocate(self%work(nx, ny))
+            allocate(self%work(nx, ny, 1))
         end associate
         
         print *, "t_poisson_2d resource allocated"
@@ -194,6 +207,8 @@ contains
         ! local
         integer  :: nx, ny, nz
         real(rp) :: dx, dy
+        integer :: i, j
+
 
         ! work
         nx = grid%nx; ny = grid%ny; nz = grid%nz
@@ -204,14 +219,21 @@ contains
         ! setup operator
         call fft_laplacian(nx, dx, self%laplacian_x)
         call fft_laplacian(ny, dy, self%laplacian_y)
+        ! pre-calculate
+        do j = 1, ny
+            do i = 1, nx
+                self%laplacian_xy(i, j) = self%laplacian_x(i) + self%laplacian_y(j)
+            end do
+        end do
+
         call matrix_laplacian(nz, grid%dsf, grid%dsc, self%a, self%b, self%c)
 
 
         ! plan FFT
-        self%forward(1) = create_r2r_3d(nx, ny, nz, DFT, 0) ! X
-        self%forward(2) = create_r2r_3d(nx, ny, nz, DFT, 1) ! Y
-        self%backward(1) = create_r2r_3d(nx, ny, nz, IDFT, 1) ! Y
-        self%backward(2) = create_r2r_3d(nx, ny, nz, IDFT, 0) ! X
+        self%forward(1) = create_r2r(nx, ny, nz, DFT, 0) ! X
+        self%forward(2) = create_r2r(nx, ny, nz, DFT, 1) ! Y
+        self%backward(1) = create_r2r(nx, ny, nz, IDFT, 1) ! Y
+        self%backward(2) = create_r2r(nx, ny, nz, IDFT, 0) ! X
         self%factor = 1.0_rp/real(nx*ny, rp)
 
     end subroutine init_poisson
@@ -229,25 +251,25 @@ contains
                   work=>self%work, &
                   forward=>self%forward, backward=>self%backward, &
                   a=>self%a, b=>self%b, c=>self%c, bb=>self%bb, &
-                  laplacian_x=>self%laplacian_x, laplacian_y => self%laplacian_y)
+                  laplacian_xy=>self%laplacian_xy)
             
             ! Copy to work array
             work(:, :, :) = phi(1:nx, 1:ny, 1:nz)
 
             ! forward transform X -> Y
-            call execute_fft_3d(forward(1), work)
-            call execute_fft_3d(forward(2), work)
+            call execute_fft(forward(1), work)
+            call execute_fft(forward(2), work)
             
             do j = 1, ny
                 do i = 1, nx
-                    bb(:) = b(:) + (laplacian_x(i) + laplacian_y(j))
+                    bb(:) = b(:) + laplacian_xy(i, j)
                     call tridag(a, bb, c, work(i, j, :), nz)
                 end do
             end do
 
             ! backward transform Y -> X
-            call execute_fft_3d(backward(1), work)
-            call execute_fft_3d(backward(2), work)
+            call execute_fft(backward(1), work)
+            call execute_fft(backward(2), work)
 
             ! Copy back to original array
             phi(1:nx, 1:ny, 1:nz) = self%factor*work(:, :, :)
@@ -262,6 +284,7 @@ contains
         associate(nx => self%nx, ny => self%ny, nz => self%nz)
             allocate(self%laplacian_x(nx))
             allocate(self%laplacian_y(ny))
+            allocate(self%laplacian_xy(nx, ny))
             allocate(self%a(nz), self%b(nz), self%c(nz), self%bb(nz))
             allocate(self%work(nx, ny, nz))
         end associate
@@ -281,6 +304,8 @@ contains
         if (allocated(self%laplacian_y)) then
             deallocate(self%laplacian_y)
         endif
+
+        if (allocated(self%laplacian_xy)) deallocate(self%laplacian_xy)
 
         ! Deallocate a, b, c
         if (allocated(self%a)) then

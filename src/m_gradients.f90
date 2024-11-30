@@ -7,19 +7,6 @@ module m_gradients
     
     private
 
-    type, public :: t_gradient_2d
-        private
-        real(rp) :: invdx
-        real(rp), allocatable :: invdyf(:)
-        integer :: nx
-        integer :: ny
-    contains
-        private
-        procedure, public :: init => init_gradient_2d
-        procedure, public :: finalize => finalize_gradient_2d
-    end type t_gradient_2d
-
-
     type, public :: t_gradient
         private
         real(rp) :: invdx
@@ -32,43 +19,14 @@ module m_gradients
     contains
         private
         procedure, public :: init => init_gradient
-        procedure, public :: gradpx_2d
+        procedure, public :: gradpx
         procedure, public :: gradpy_2d
-        procedure, public :: gradpx_3d
         procedure, public :: gradpy_3d
-        procedure, public :: gradpz_3d
+        procedure, public :: gradpz
         procedure, public :: finalize => finalize_gradient
     end type t_gradient
 
 contains
-
-    subroutine init_gradient_2d(self, grid)
-        ! interface
-        class(t_gradient_2d) :: self
-        type(t_rectilinear) :: grid
-
-        ! local
-        integer  :: nx, ny
-
-        ! work
-        nx = grid%nx; ny = grid%ny
-        self%nx = nx; self%ny = ny
-        self%invdx = 1.0_rp/grid%dx
-        allocate(self%invdyf(0:ny + 1))
-        self%invdyf(:) = 1.0_rp/grid%dsf(:)
-
-    end subroutine init_gradient_2d
-
-    
-    subroutine finalize_gradient_2d(self)
-        ! interface
-        class(t_gradient_2d) :: self
-
-        if (allocated(self%invdyf)) deallocate(self%invdyf)
-
-    end subroutine finalize_gradient_2d
-    
-    ! 3D
     subroutine init_gradient(self, grid)
         ! interface
         class(t_gradient) :: self
@@ -93,46 +51,8 @@ contains
 
     end subroutine init_gradient
 
-    subroutine gradpx_2d(self, phi, work)
-        ! interface
-        class(t_gradient) :: self
-        real(rp), intent(in) :: phi(0:, 0:)
-        real(rp), intent(out) :: work(0:, 0:)
 
-        ! local
-        integer :: i, j
-
-        associate(nx => self%nx, ny=>self%ny, invdx=>self%invdx)
-            do j = 1, ny
-                do i = 0, nx
-                    work(i, j) = (phi(i + 1, j) - phi(i,  j))*invdx
-                end do
-            end do
-        end associate
-        
-    end subroutine gradpx_2d
-
-    subroutine gradpy_2d(self, phi, work)
-        ! interface
-        class(t_gradient) :: self
-        real(rp), intent(in) :: phi(0:, 0:)
-        real(rp), intent(out) :: work(0:, 0:)
-        
-        ! local
-        integer :: i, j
-
-        associate(nx => self%nx, ny=>self%ny, invdyf=>self%invdsf)
-            do j = 0, ny
-                do i = 1, nx
-                    work(i, j) = (phi(i, j + 1) - phi(i,  j))*invdyf(j)
-                end do
-            end do
-        end associate
-
-    end subroutine gradpy_2d
-
-
-    subroutine gradpx_3d(self, phi, work)
+    subroutine gradpx(self, phi, work)
         ! interface
         class(t_gradient) :: self
         real(rp), intent(in) :: phi(0:, 0:, 0:)
@@ -140,6 +60,11 @@ contains
 
         ! local
         integer :: i, j, k
+
+        block
+            use m_io, only: array_write_3d
+            call array_write_3d('phi.bin', phi)
+        end block
 
         associate(nx => self%nx, ny=>self%ny, nz => self%nz, invdx=>self%invdx)
             do k = 1, nz
@@ -149,9 +74,34 @@ contains
                     end do
                 end do
             end do
+
+            block
+                use m_io, only: array_write_3d
+                call array_write_3d('dphidx.bin', phi)
+            end block
         end associate
 
-    end subroutine gradpx_3d
+    end subroutine gradpx
+
+    subroutine gradpy_2d(self, phi, work)
+        ! interface
+        class(t_gradient) :: self
+        real(rp), intent(in) :: phi(0:, 0:, 0:)
+        real(rp), intent(out) :: work(0:, 0:, 0:)
+
+        integer :: i, j, k
+
+        associate(nx => self%nx, ny=>self%ny, nz => self%nz, invdyf=>self%invdsf)
+            do k = 1, nz
+                do j = 0, ny
+                    do i = 1, nx
+                        work(i, j, k) = (phi(i, j + 1, k) - phi(i,  j, k))*invdyf(j)
+                    end do
+                end do
+            end do
+        end associate
+
+    end subroutine gradpy_2d   
 
     subroutine gradpy_3d(self, phi, work)
         ! interface
@@ -173,7 +123,7 @@ contains
 
     end subroutine gradpy_3d
 
-    subroutine gradpz_3d(self, phi, work)
+    subroutine gradpz(self, phi, work)
         ! interface
         class(t_gradient) :: self
         real(rp), intent(in) :: phi(0:, 0:, 0:)
@@ -192,7 +142,7 @@ contains
             end do
         end associate
 
-    end subroutine gradpz_3d
+    end subroutine gradpz
 
     subroutine finalize_gradient(self)
         ! interface

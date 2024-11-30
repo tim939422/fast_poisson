@@ -82,6 +82,7 @@ contains
         is_3d = size(dims) > 2; self%is_3d = is_3d
         nx = dims(1); self%nx = nx
         ny = dims(2); self%ny = ny
+        nz = 1; self%nz = 1 ! default
         if (is_3d) then
             nz = dims(3); self%nz = nz
         end if

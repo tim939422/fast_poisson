@@ -28,7 +28,7 @@ contains
         integer, intent(in) :: n
         !> uniform cell width
         real(rp), intent(in) :: dx
-        !> eigenvalue divided by squared spacing: lambda/dx^2 
+        !> eigenvalue divided by squared spacing: lambda/dx^2
         real(rp), intent(out) :: laplacian(:)
 
         ! local

@@ -39,11 +39,6 @@ program demo_2d
         end do
     end associate
 
-    block
-        integer :: iunit
-        call array_write_3d('phi_S.bin', phi(:, :, 1:1))
-    end block
-
     call potential_solver%solve(phi)
 
     ! BC (periodic in x and Neumann in y)
@@ -67,12 +62,6 @@ program demo_2d
     end associate
     relative_error = norm2(ref(0:nx, 1:ny, 1) - sol(0:nx, 1:ny, 1))/norm2(ref(0:nx, 1:ny, 1))
     write(*, '("Relative error in dphi/dx ", es23.15)') relative_error
-    
-
-    block
-        integer :: iunit
-        call array_write_3d('phi.bin', phi(:, :, 1:1))
-    end block
 
     call gradient%gradpy_2d(phi, sol)
     associate(xc => channel_grid%xc, yf => channel_grid%yf)

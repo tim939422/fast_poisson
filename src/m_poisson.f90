@@ -9,7 +9,6 @@ module m_poisson
     use m_rectilinear, only: t_rectilinear
     use m_laplacian, only: fft_laplacian, matrix_laplacian
     use m_fft, only: DFT, IDFT
-    use m_fft, only: create_r2r_2d, execute_fft_2d
     use m_fft, only: create_r2r, execute_fft, destroy_plan
     use, intrinsic :: iso_c_binding, only: c_ptr
     use m_tdma, only: tridag
@@ -125,17 +124,7 @@ contains
             ! Copy to work array
             work(:, :, :) = phi(1:nx, 1:ny, 1:1)
 
-            block
-                integer :: iunit
-                call array_write_3d('work_DFT_x.bin', work(:, :, :))
-            end block
-
             call execute_fft(forward, work)
-
-            block
-                integer :: iunit
-                call array_write_3d('work_DFT_x.bin', work(:, :, :))
-            end block
 
             do i = 1, nx
                 bb(:) = b(:) + laplacian_x(i)

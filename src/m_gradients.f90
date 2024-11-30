@@ -61,11 +61,6 @@ contains
         ! local
         integer :: i, j, k
 
-        block
-            use m_io, only: array_write_3d
-            call array_write_3d('phi.bin', phi)
-        end block
-
         associate(nx => self%nx, ny=>self%ny, nz => self%nz, invdx=>self%invdx)
             do k = 1, nz
                 do j = 1, ny
@@ -74,11 +69,6 @@ contains
                     end do
                 end do
             end do
-
-            block
-                use m_io, only: array_write_3d
-                call array_write_3d('dphidx.bin', phi)
-            end block
         end associate
 
     end subroutine gradpx

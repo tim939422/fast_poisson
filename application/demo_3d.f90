@@ -44,7 +44,7 @@ program demo_2d
     end associate
 
 
-    call potential_solver%solve(phi)
+    call potential_solver%solve_3d(phi)
 
     ! BC
     ! periodic in x

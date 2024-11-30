@@ -72,7 +72,8 @@ module m_poisson
     contains
         private
         procedure, public :: init => init_poisson
-        procedure, public :: solve => solve_poisson_3d
+        procedure, public :: solve_3d => solve_poisson_3d
+        procedure, public :: solve_2d => solve_poisson_2d
         procedure :: alloc => allocate_poisson
         procedure, public :: finalize => finalize_poisson
     end type t_poisson
@@ -274,6 +275,7 @@ contains
             call execute_fft(forward(1), work)
             call execute_fft(forward(2), work)
             
+            ! solve linear system
             do j = 1, ny
                 do i = 1, nx
                     bb(:) = b(:) + laplacian_xy(i, j)
@@ -287,9 +289,47 @@ contains
 
             ! Copy back to original array
             phi(1:nx, 1:ny, 1:nz) = self%factor*work(:, :, :)
+
         end associate
 
     end subroutine solve_poisson_3d
+
+    subroutine solve_poisson_2d(self, phi)
+        ! interface
+        class(t_poisson) :: self
+        real(rp), dimension(0:, 0:, 0:) :: phi
+
+        ! local
+        integer :: i, j
+
+        ! work
+        associate(nx => self%nx, ny => self%ny &
+                  work=>self%work, &
+                  forward=>self%forward, backward=>self%backward, &
+                  a=>self%a, b=>self%b, c=>self%c, bb=>self%bb, &
+                  laplacian_x=>self%laplacian_x)
+            
+            ! Copy to work array
+            work(:, :, :) = phi(1:nx, 1:ny, 1:nz)
+
+            ! forward transform X
+            call execute_fft(forward(1), work)
+            
+            ! solve linear system
+            do i = 1, nx
+                bb(:) = b(:) + laplacian_x(i)
+                call tridag(a, bb, c, work(i, :, 1), ny)
+            end do
+
+            ! backward transform X
+            call execute_fft(backward(2), work)
+
+            ! Copy back to original array
+            phi(1:nx, 1:ny, 1:nz) = self%factor*work(:, :, :)
+            
+        end associate
+
+    end subroutine solve_poisson_2d
 
     subroutine allocate_poisson(self)
         ! interface
@@ -318,34 +358,30 @@ contains
         ! interface
         class(t_poisson) :: self
 
-        ! Deallocate laplacian_x and laplacian y
         if (allocated(self%laplacian_x)) deallocate(self%laplacian_x)
-        if (allocated(self%laplacian_y)) then
-            deallocate(self%laplacian_y)
-        endif
-
+        if (allocated(self%laplacian_y)) deallocate(self%laplacian_y)
         if (allocated(self%laplacian_xy)) deallocate(self%laplacian_xy)
 
-        ! Deallocate a, b, c
-        if (allocated(self%a)) then
-            deallocate(self%a)
-        endif
-        if (allocated(self%b)) then
-            deallocate(self%b)
-        endif
-        if (allocated(self%c)) then
-            deallocate(self%c)
-        endif
+        if (allocated(self%a)) deallocate(self%a)
+        if (allocated(self%b)) deallocate(self%b)
+        if (allocated(self%c)) deallocate(self%c)
         if (allocated(self%bb)) deallocate(self%bb)
 
-        ! Deallocate work
         if (allocated(self%work)) then
             deallocate(self%work)
         endif
 
+        associate(nz => self%nz)
 
-        call destroy_plan(self%forward(1)); call destroy_plan(self%forward(2))
-        call destroy_plan(self%backward(1)); call destroy_plan(self%backward(2))
+            call destroy_plan(self%forward(1))
+            if (nz > 1) then
+                call destroy_plan(self%forward(2))
+                call destroy_plan(self%backward(1))
+            end if
+            call destroy_plan(self%backward(2))
+
+        end associate
+
     end subroutine finalize_poisson
-    
+
 end module m_poisson

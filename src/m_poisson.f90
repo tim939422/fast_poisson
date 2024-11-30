@@ -194,36 +194,61 @@ contains
         type(t_rectilinear) :: grid
 
         ! local
-        integer  :: nx, ny, nz
-        real(rp) :: dx, dy
-        integer :: i, j
-
 
         ! work
-        nx = grid%nx; ny = grid%ny; nz = grid%nz
-        dx = grid%dx; dy = grid%dy
-        self%nx = nx; self%ny = ny; self%nz = nz
+
+        copy_parameter: associate(nx => self%nx, ny => self%ny, nz => self%nz)
+            nx = grid%nx; ny = grid%ny; nz = grid%nz
+        end associate copy_parameter
+        
         call self%alloc
 
-        ! setup operator
-        call fft_laplacian(nx, dx, self%laplacian_x)
-        call fft_laplacian(ny, dy, self%laplacian_y)
-        ! pre-calculate
-        do j = 1, ny
-            do i = 1, nx
-                self%laplacian_xy(i, j) = self%laplacian_x(i) + self%laplacian_y(j)
-            end do
-        end do
+        setup_operator: block
 
-        call matrix_laplacian(nz, grid%dsf, grid%dsc, self%a, self%b, self%c)
+            integer :: i, j
+
+            associate(nx => self%nx, ny => self%ny, nz => self%nz, &
+                laplacian_x => self%laplacian_x, laplacian_y => self%laplacian_y, &
+                laplacian_xy => self%laplacian_xy)
+                
+                call fft_laplacian(nx, grid%dx, laplacian_x)
+                if (nz > 1) then
+
+                    call fft_laplacian(nx, grid%dy, laplacian_y)
+                    call matrix_laplacian(nz, grid%dsf, grid%dsc, self%a, self%b, self%c)
+
+                    ! pre-calculate
+                    do j = 1, ny
+                        do i = 1, nx
+                            laplacian_xy(i, j) = laplacian_x(i) + laplacian_y(j)
+                        end do
+                    end do
+                    call matrix_laplacian(nz, grid%dsf, grid%dsc, self%a, self%b, self%c)
+                else
+                    call matrix_laplacian(ny, grid%dsf, grid%dsc, self%a, self%b, self%c)
+                end if
+            
+            end associate
+        end block setup_operator
 
 
         ! plan FFT
-        self%forward(1) = create_r2r(nx, ny, nz, DFT, 0) ! X
-        self%forward(2) = create_r2r(nx, ny, nz, DFT, 1) ! Y
-        self%backward(1) = create_r2r(nx, ny, nz, IDFT, 1) ! Y
-        self%backward(2) = create_r2r(nx, ny, nz, IDFT, 0) ! X
-        self%factor = 1.0_rp/real(nx*ny, rp)
+        plan_fft: associate(nx => self%nx, ny => self%ny, nz => self%nz)
+            self%forward(1) = create_r2r(nx, ny, nz, DFT, 0) ! X
+            if (nz > 1) then
+                self%forward(2) = create_r2r(nx, ny, nz, DFT, 1) ! Y
+                self%backward(1) = create_r2r(nx, ny, nz, IDFT, 1) ! Y
+            end if
+            self%backward(2) = create_r2r(nx, ny, nz, IDFT, 0) ! X
+
+            if (nz > 1) then
+                ! 3D
+                self%factor = 1.0_rp/real(nx*ny, rp)
+            else
+                ! 2D
+                self%factor = 1.0_rp/real(nx, rp)
+            end if
+        end associate plan_fft
 
     end subroutine init_poisson
 
@@ -271,11 +296,18 @@ contains
         class(t_poisson) :: self
 
         associate(nx => self%nx, ny => self%ny, nz => self%nz)
+
             allocate(self%laplacian_x(nx))
-            allocate(self%laplacian_y(ny))
-            allocate(self%laplacian_xy(nx, ny))
-            allocate(self%a(nz), self%b(nz), self%c(nz), self%bb(nz))
             allocate(self%work(nx, ny, nz))
+
+            if (nz > 1) then
+                allocate(self%laplacian_y(ny))
+                allocate(self%laplacian_xy(nx, ny))
+                allocate(self%a(nz), self%b(nz), self%c(nz), self%bb(nz))
+            else
+                allocate(self%a(ny), self%b(ny), self%c(ny), self%bb(ny))
+            end if
+
         end associate
 
         print *, "t_poisson_3d resource allocated"
@@ -287,9 +319,7 @@ contains
         class(t_poisson) :: self
 
         ! Deallocate laplacian_x and laplacian y
-        if (allocated(self%laplacian_x)) then
-            deallocate(self%laplacian_x)
-        endif
+        if (allocated(self%laplacian_x)) deallocate(self%laplacian_x)
         if (allocated(self%laplacian_y)) then
             deallocate(self%laplacian_y)
         endif
@@ -317,4 +347,5 @@ contains
         call destroy_plan(self%forward(1)); call destroy_plan(self%forward(2))
         call destroy_plan(self%backward(1)); call destroy_plan(self%backward(2))
     end subroutine finalize_poisson
+    
 end module m_poisson

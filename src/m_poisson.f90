@@ -19,32 +19,6 @@ module m_poisson
 
     private
 
-    type, public :: t_poisson_2d
-        private
-        !> dimension in x (# of cells)
-        integer, public :: nx
-        !> dimension in y
-        integer, public :: ny
-        !> laplacian operator in x
-        real(rp), allocatable :: laplacian_x(:)
-        !> tridiagonal matrix in y (bb is the b + laplacian_x(i))
-        real(rp), allocatable :: a(:), b(:), c(:), bb(:)
-        !> work array for FFT
-        real(rp), allocatable :: work(:, :, :)
-        !> forward FFT plan
-        type(c_ptr) :: forward
-        !> backward FFT plan
-        type(c_ptr) :: backward
-        !> FFT normalization factor
-        real(rp) :: factor
-    contains
-        private
-        procedure, public :: init => init_poisson_2d
-        procedure, public :: solve => solve_poisson_2d
-        procedure :: alloc => allocate_poisson_2d
-        procedure, public :: finalize => finalize_poisson_2d
-    end type t_poisson_2d
-
     type, public :: t_poisson
         private
         !> dimension in x (# of cells)
@@ -79,114 +53,6 @@ module m_poisson
     end type t_poisson
 
 contains
-
-    subroutine init_poisson_2d(self, grid)
-        ! interface
-        class(t_poisson_2d) :: self
-        type(t_rectilinear) :: grid
-
-        ! local
-        integer  :: nx, ny
-        real(rp) :: dx
-
-        ! work
-        nx = grid%nx; ny = grid%ny
-        dx = grid%dx
-        self%nx = nx; self%ny = ny
-        call self%alloc
-
-        ! setup operator
-        call fft_laplacian(nx, dx, self%laplacian_x)
-        associate(dyf => grid%dsf, dyc => grid%dsc)
-            call matrix_laplacian(ny, dyf, dyc, self%a, self%b, self%c)
-        end associate
-
-        ! plan FFT
-        self%forward = create_r2r(nx, ny, 1, DFT, 0)
-        self%backward = create_r2r(nx, ny, 1, IDFT, 0)
-        self%factor = 1.0_rp/real(nx, rp)
-
-    end subroutine init_poisson_2d
-
-    subroutine solve_poisson_2d(self, phi)
-        ! interface
-        class(t_poisson_2d) :: self
-        real(rp), dimension(0:, 0:, 0:) :: phi
-
-        ! local
-        integer :: i
-
-        ! work
-        associate(nx => self%nx, ny=>self%ny, work=>self%work, &
-                  forward=>self%forward, backward=>self%backward, &
-                  a=>self%a, b=>self%b, c=>self%c, bb=>self%bb, &
-                  laplacian_x=>self%laplacian_x)
-            
-            ! Copy to work array
-            work(:, :, :) = phi(1:nx, 1:ny, 1:1)
-
-            call execute_fft(forward, work)
-
-            do i = 1, nx
-                bb(:) = b(:) + laplacian_x(i)
-                call tridag(a, bb, c, work(i, :, 1), ny)
-            end do
-
-            call execute_fft(backward, work)
-
-            ! Copy back to original array
-            phi(1:nx, 1:ny, 1:1) = self%factor*work(:, :, :)
-
-        end associate
-
-    end subroutine solve_poisson_2d
-
-    subroutine allocate_poisson_2d(self)
-        ! interface
-        class(t_poisson_2d) :: self
-
-        associate(nx => self%nx, ny=>self%ny)
-            allocate(self%laplacian_x(nx))
-            allocate(self%a(ny), self%b(ny), self%c(ny), self%bb(ny))
-            allocate(self%work(nx, ny, 1))
-        end associate
-        
-        print *, "t_poisson_2d resource allocated"
-
-    end subroutine allocate_poisson_2d
-
-    subroutine finalize_poisson_2d(self)
-        ! interface
-        class(t_poisson_2d) :: self
-
-        ! Deallocate laplacian_x
-        if (allocated(self%laplacian_x)) then
-            deallocate(self%laplacian_x)
-        endif
-
-        ! Deallocate a, b, c
-        if (allocated(self%a)) then
-            deallocate(self%a)
-        endif
-        if (allocated(self%b)) then
-            deallocate(self%b)
-        endif
-        if (allocated(self%c)) then
-            deallocate(self%c)
-        endif
-        if (allocated(self%bb)) deallocate(self%bb)
-
-        ! Deallocate work
-        if (allocated(self%work)) then
-            deallocate(self%work)
-        endif
-
-
-        call destroy_plan(self%forward)
-        call destroy_plan(self%backward)
-
-    end subroutine finalize_poisson_2d
-
 
 
     subroutine init_poisson(self, grid)
@@ -303,14 +169,14 @@ contains
         integer :: i, j
 
         ! work
-        associate(nx => self%nx, ny => self%ny &
+        associate(nx => self%nx, ny => self%ny, &
                   work=>self%work, &
                   forward=>self%forward, backward=>self%backward, &
                   a=>self%a, b=>self%b, c=>self%c, bb=>self%bb, &
                   laplacian_x=>self%laplacian_x)
             
             ! Copy to work array
-            work(:, :, :) = phi(1:nx, 1:ny, 1:nz)
+            work(:, :, :) = phi(1:nx, 1:ny, 1:1)
 
             ! forward transform X
             call execute_fft(forward(1), work)
@@ -325,7 +191,7 @@ contains
             call execute_fft(backward(2), work)
 
             ! Copy back to original array
-            phi(1:nx, 1:ny, 1:nz) = self%factor*work(:, :, :)
+            phi(1:nx, 1:ny, 1:1) = self%factor*work(:, :, :)
             
         end associate
 

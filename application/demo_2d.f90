@@ -2,7 +2,7 @@ program demo_2d
     use m_kinds, only: rp
     use m_constants, only: PI
     use m_rectilinear, only: t_rectilinear
-    use m_poisson, only: t_poisson_2d
+    use m_poisson, only: t_poisson
     use m_gradients, only: t_gradient
     use m_io, only: array_write_3d
 
@@ -11,7 +11,7 @@ program demo_2d
     real(rp), parameter :: beta = 1.2_rp
     integer :: nx, ny
     type(t_rectilinear) :: channel_grid
-    type(t_poisson_2d) :: potential_solver
+    type(t_poisson) :: potential_solver
     type(t_gradient) :: gradient
     real(rp), allocatable, dimension(:, :, :) :: phi, sol, ref
     integer :: i, j
@@ -39,7 +39,7 @@ program demo_2d
         end do
     end associate
 
-    call potential_solver%solve(phi)
+    call potential_solver%solve_2d(phi)
 
     ! BC (periodic in x and Neumann in y)
     phi(0, 1:ny, 1) = phi(nx, 1:ny, 1)
